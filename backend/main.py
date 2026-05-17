@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-app = FastAPI(title="Ultra Analytics Engine - Core")
+app = FastAPI(title="Ultra Analytics Engine - V2")
 
 REDIS_URL = os.getenv("REDIS_URL")
 redis_client = None

@@ -6,7 +6,7 @@ from celery import Celery
 
 app = FastAPI(title="Ultra Analytics Engine API")
 
-# Permite que o Streamlit acesse o Backend sem bloqueios de segurança
+# Permite que o Streamlit acesse o Backend sem bloqueios
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -27,7 +27,7 @@ class SolicitacaoColeta(BaseModel):
 def home():
     return {"status": "Backend online e operando"}
 
-# Configurado sem a barra para alinhar com o Streamlit
+# Rota configurada corretamente sem redirecionamento de barras
 @app.post("/disparar-coleta", redirect_slashes=False)
 def disparar_coleta(dados: SolicitacaoColeta):
     tarefa = celery_client.send_task(
@@ -46,4 +46,4 @@ def obter_status(task_id: str):
         "id": task_id,
         "status": resultado.status,
         "resultado": resultado.result if resultado.ready() else None
-    } 
+    }

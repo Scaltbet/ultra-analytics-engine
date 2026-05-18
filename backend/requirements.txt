@@ -5,6 +5,4 @@ psycopg2-binary
 python-dotenv
 requests
 redis
-python-jose[cryptography]
-passlib[bcrypt]
-python-multipart
+celery

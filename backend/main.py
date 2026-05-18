@@ -4,17 +4,25 @@ from celery import Celery
 
 app = FastAPI(title="Ultra Analytics Engine API")
 
-# Conecta ao Redis
+# Define a URL de conexão de forma direta e segura
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-celery_client = Celery("tasks", broker=REDIS_URL, backend=REDIS_URL)
+
+# Inicialização limpa do cliente do Celery
+celery_client = Celery()
+celery_client.conf.update(
+    broker_url=REDIS_URL,
+    result_backend=REDIS_URL
+)
 
 @app.get("/")
 def home():
-    return {"status": "Backend online e operando com Celery"}
+    return {"status": "Backend online", "engine": "FastAPI + Celery"}
 
-# ROTA COMPATÍVEL (Aceita exatamente o formato enviado pelo frontend)
 @app.post("/coletar/soccer/liga/{liga}/{id_time}")
 def disparar_coleta(liga: str, id_time: str):
-    """ Rota que recebe o comando do Streamlit e joga na fila """
-    celery_client.send_task("tarefa_coleta_espn", args=[liga, id_time])
-    return {"status": "Sucesso", "mensagem": f"Coleta enviada para a fila para a liga {liga} e time {id_time}"}
+    """ Envia a tarefa de raspagem para o Worker processar em segundo plano """
+    try:
+        celery_client.send_task("tarefa_coleta_espn", args=[liga, id_time])
+        return {"status": "Sucesso", "mensagem": f"Coleta agendada na fila Redis para {liga} e time {id_time}"}
+    except Exception as e:
+        return {"status": "Erro", "detalhes": str(e)}

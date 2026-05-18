@@ -8,16 +8,15 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. Configuração do Endereço do Servidor
-# Coloque a URL do seu 'ultra-backend' do Render dentro das aspas (Sem a barra '/' no final)
-URL_BACKEND = "https://ultra-backend-w8f4.onrender.com"
+# 2. Definição do link real do seu Render (Sem barra no final)
+URL_BACKEND = "https://ultra-analytics-engine.onrender.com"
 
 # Inicializa a variável de sessão para o monitor de tarefas
 if "ultimo_task_id" not in st.session_state:
     st.session_state["ultimo_task_id"] = ""
 
 # 3. Cabeçalho da Interface
-st.title("📊 Ultra Analytics Engine")
+st.title("📊 Painel de Performance Esportiva")
 st.caption("Sistema de Alta Performance para Cruzamento de Estatísticas Esportivas")
 
 st.success("⚡ Conexão ativa com o núcleo de análise.")
@@ -52,11 +51,13 @@ with aba_disparar:
     if st.button("Executar Engenharia de Coleta"):
         with st.spinner("Acionando motores e enviando ordem para os Workers..."):
             try:
+                # O payload precisa ir exatamente como o FastAPI espera
                 payload = {
                     "liga": str(liga_selecionada),
                     "id_time": str(id_time)
                 }
                 
+                # Disparo POST apontando diretamente para a rota /disparar-coleta
                 resposta = requests.post(
                     f"{URL_BACKEND}/disparar-coleta", 
                     json=payload, 
@@ -69,7 +70,7 @@ with aba_disparar:
                     st.session_state["ultimo_task_id"] = dados.get("task_id")
                     st.info(f"ID do Processo em segundo plano: **{dados.get('task_id')}**")
                 else:
-                    st.error(f"Erro {resposta.status_code}: Rota inválida ou formato incorreto no servidor.")
+                    st.error(f"Erro {resposta.status_code}: O servidor recusou o formato da requisição.")
                     
             except Exception as e:
                 st.error(f"Não foi possível estabelecer contato com o servidor backend: {e}")

@@ -61,7 +61,8 @@ with aba_disparar:
                 resposta = requests.post(
                     f"{URL_BACKEND}/disparar-coleta", 
                     json=payload, 
-                    timeout=15
+                    timeout=60
+            
                 )
                 
                 if resposta.status_code == 200:

@@ -28,7 +28,7 @@ def home():
     return {"status": "Backend online e operando"}
 
 # Configurado sem a barra para alinhar com o Streamlit
-@app.post("/disparar-coleta")
+@app.post("/disparar-coleta", redirect_slashes=False)
 def disparar_coleta(dados: SolicitacaoColeta):
     tarefa = celery_client.send_task(
         "tarefa_coleta_espn", 
@@ -46,4 +46,4 @@ def obter_status(task_id: str):
         "id": task_id,
         "status": resultado.status,
         "resultado": resultado.result if resultado.ready() else None
-    }
+    } 

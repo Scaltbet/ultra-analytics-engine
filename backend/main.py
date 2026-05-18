@@ -4,7 +4,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from celery import Celery
 
-# Voltamos ao padrão limpo e sem o parâmetro que travou as portas!
 app = FastAPI(title="Ultra Analytics Engine API")
 
 # Permite que o Streamlit acesse o Backend sem bloqueios
@@ -19,6 +18,12 @@ app.add_middleware(
 # Conexão Redis
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 celery_client = Celery("tasks", broker=REDIS_URL, backend=REDIS_URL)
+
+# Ajuste cirúrgico de SSL para evitar rejeições e timeouts com o Redis seguro
+celery_client.conf.update(
+    broker_use_ssl={"ssl_cert_reqs": "none"},
+    redis_backend_use_ssl={"ssl_cert_reqs": "none"}
+)
 
 class SolicitacaoColeta(BaseModel):
     liga: str

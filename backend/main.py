@@ -4,7 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from celery import Celery
 
-app = FastAPI(title="Ultra Analytics Engine API")
+# O parâmetro de barras configurado no lugar correto!
+app = FastAPI(title="Ultra Analytics Engine API", redirect_slashes=False)
 
 # Permite que o Streamlit acesse o Backend sem bloqueios
 app.add_middleware(
@@ -27,8 +28,8 @@ class SolicitacaoColeta(BaseModel):
 def home():
     return {"status": "Backend online e operando"}
 
-# Rota configurada corretamente sem redirecionamento de barras
-@app.post("/disparar-coleta", redirect_slashes=False)
+# Rota limpa, pois o redirecionamento já foi tratado no app global
+@app.post("/disparar-coleta")
 def disparar_coleta(dados: SolicitacaoColeta):
     tarefa = celery_client.send_task(
         "tarefa_coleta_espn", 

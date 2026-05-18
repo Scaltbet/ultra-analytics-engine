@@ -1,4 +1,4 @@
-import os
+import os  # Corrigido o 'import' com letra minúscula
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -15,9 +15,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Conexão Redis
+# Conexão Redis usando a variável de ambiente do Render
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-celery_client = Celery("tasks", broker=REDIS_URL, backend=REDIS_URL)
+
+# Ajustado o nome para "ultra_analytics_engine" para bater com o Worker
+celery_client = Celery("ultra_analytics_engine", broker=REDIS_URL, backend=REDIS_URL)
 
 # Ajuste cirúrgico de SSL para evitar rejeições e timeouts com o Redis seguro
 celery_client.conf.update(
@@ -33,11 +35,11 @@ class SolicitacaoColeta(BaseModel):
 def home():
     return {"status": "Backend online e operando"}
 
-# Rota principal de disparo
+# Rota principal de disparo ajustada com o caminho real da task
 @app.post("/disparar-coleta")
 def disparar_coleta(dados: SolicitacaoColeta):
     tarefa = celery_client.send_task(
-        "tarefa_coleta_espn", 
+        "backend.coletor_espn.tarefa_coleta_espn",  # Caminho mapeado pelo Celery
         args=[dados.liga, dados.id_time]
     )
     return {

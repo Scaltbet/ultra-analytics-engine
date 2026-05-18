@@ -61,9 +61,8 @@ else:
         if st.button("Executar Engenharia de Coleta"):
             with st.spinner("Enviando requisição para a fila de execução rápida..."):
                 try:
-                    # Extrai o final da string (ex: 'eng.1') para montar a rota exata do backend
-                    liga_slug = liga_selecionada.split("/")[-1]
-                    url_final = f"{BACKEND_URL}/coletar/soccer/liga/{liga_slug}/{id_time}"
+                    # Envia a rota completa exatamente como o backend espera receber
+                    url_final = f"{BACKEND_URL}/coletar{liga_selecionada}/{id_time}"
                     
                     resposta = requests.post(url_final, timeout=15)
                     
@@ -71,7 +70,7 @@ else:
                         st.balloons()
                         st.success(f"Sucesso! O Worker começou a processar os dados do time {id_time}.")
                     else:
-                        st.error(f"Erro {resposta.status_code}: Rota inválida ou servidor ocupado.")
+                        st.error(f"Erro {resposta.status_code}: Rota inválida ou formato incorreto.")
                 except Exception as e:
                     st.error(f"Não foi possível conectar ao Backend: {e}")
 
@@ -80,7 +79,7 @@ else:
         
         with col_g1:
             st.subheader("📈 Curva Evolutiva de ROI / Lucro Operacional")
-            dados_roi = pd.DataFrame({"Jogos": list(range(1, 11)), "ROI": [10, 15, 12, 18, 25, 22, 30, 28, 35, 40]})
+            dados_roi = pd.DataFrame({"Jogos": list(range(1, 11)), "ROI": [10, 15, 12, 18, 22, 20, 25, 28, 30, 35]})
             fig_roi = px.line(dados_roi, x="Jogos", y="ROI", markers=True)
             st.plotly_chart(fig_roi, use_container_width=True)
             
@@ -88,7 +87,7 @@ else:
             st.subheader("📊 Distribuição Macroeconômica por Mercado")
             dados_mercado = pd.DataFrame({
                 "Mercado": ["Gols", "Handicap", "Cantos", "Ambos Marcam"],
-                "Volume": [150, 90, 320, 210]
+                "Volume": [35, 20, 30, 15]
             })
             fig_mercado = px.bar(dados_mercado, x="Mercado", y="Volume", color="Mercado")
             st.plotly_chart(fig_mercado, use_container_width=True)

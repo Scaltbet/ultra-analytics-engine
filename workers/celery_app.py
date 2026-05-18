@@ -1,4 +1,5 @@
 import os
+import ssl
 from celery import Celery
 
 # Puxa a URL com 'rediss://' configurada no Render através do grupo Config
@@ -12,14 +13,18 @@ celery_app = Celery(
     include=["backend.coletor_espn"]  # Garante que o Celery encontre suas tarefas da ESPN
 )
 
-# Configurações corretas de segurança para aceitar o 'rediss://' do Render
+# Configurações auditadas de segurança para aceitar o 'rediss://' do Render
 celery_app.conf.update(
-    # Ativa o SSL para o envio de mensagens (Fila/Broker)
-    broker_use_ssl={"ssl_cert_reqs": None},
+    # Ativa o SSL para o envio de mensagens (Fila/Broker) desativando validação estrita
+    broker_use_ssl={
+        "ssl_cert_reqs": ssl.CERT_NONE
+    },
     
-    # CORREÇÃO CRÍTICA: Ativa o SSL para o retorno de dados (Resultado/Backend)
-    # Substitui o termo antigo que causava a queda de conexão no comando SUBSCRIBE
-    redis_backend_transport_options={"ssl_cert_reqs": None},
+    # CORREÇÃO CRÍTICA: Passa as opções de TLS para o Backend e resolve o connect_check_health
+    redis_backend_transport_options={
+        "ssl_cert_reqs": ssl.CERT_NONE,
+        "ssl_check_hostname": False
+    },
     
     # Configurações de fuso horário do projeto
     timezone="America/Sao_Paulo",

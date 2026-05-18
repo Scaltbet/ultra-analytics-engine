@@ -13,25 +13,25 @@ celery_app = Celery(
     include=["backend.coletor_espn"]  # Garante que o Celery encontre suas tarefas da ESPN
 )
 
-# Configurações auditadas de segurança para aceitar o 'rediss://' do Render
+# Configurações auditadas de segurança para conexões criptografadas no Render
 celery_app.conf.update(
-    # Ativa o SSL para o envio de mensagens (Fila/Broker) desativando validação estrita
+    # Garante compatibilidade SSL na transmissão de mensagens do Broker
     broker_use_ssl={
         "ssl_cert_reqs": ssl.CERT_NONE
     },
     
-    # CORREÇÃO CRÍTICA: Passa as opções de TLS para o Backend e resolve o connect_check_health
+    # Resolve o erro de 'auth_response' e 'connect_check_health' no Backend
     redis_backend_transport_options={
         "ssl_cert_reqs": ssl.CERT_NONE,
         "ssl_check_hostname": False
     },
     
-    # Configurações de fuso horário do projeto
+    # Configurações padrão de fuso horário
     timezone="America/Sao_Paulo",
     enable_utc=True
 )
 
-# Apenas para testes rápidos se necessário
+# Tarefa de monitoramento interna
 @celery_app.task
 def check_worker_status():
     return "Worker está online e operando com SSL no Render!"

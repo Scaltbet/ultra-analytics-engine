@@ -4,11 +4,8 @@ import requests
 import plotly.express as px
 import plotly.graph_objects as go
 import os
-from dotenv import load_dotenv
+from datetime import datetime
 
-load_dotenv()
-
-# Configuração de Layout da Página
 st.set_page_config(
     page_title="Ultra Analytics Engine",
     page_icon="📊",
@@ -19,103 +16,77 @@ st.set_page_config(
 st.title("📊 Ultra Analytics Engine — Painel de Performance Esportiva")
 st.markdown("---")
 
-# ==========================================
 # CONFIGURAÇÃO DE VARIÁVEIS DE AMBIENTE
-# ==========================================
 BACKEND_URL = os.getenv("BACKEND_URL", "https://onrender.com")
 
-# Sidebar para Autenticação e Filtros
-st.sidebar.header("🔑 Controle de Acesso")
+# Sidebar para Autenticação e Configurações
+st.sidebar.markdown("### 🔑 Controle de Acesso")
+
+# Inicializa o estado de login se não existir
+if "conectado" not in st.session_state:
+    st.session_state.conectado = False
+
 usuario = st.sidebar.text_input("Usuário", value="admin@ultra.com")
-senha = st.sidebar.text_input("Senha", type="password", value="ultra123")
-botao_login = st.sidebar.button("Conectar ao Engine")
+senha = st.sidebar.text_input("Senha", type="password", value="12345678")
 
-# Estado de Sessão para Token JWT
-if "token" not in st.session_state:
-    st.session_state.token = None
-
-if botao_login:
-    try:
-        response = requests.post(
-            f"{BACKEND_URL}/token",
-            data={"username": usuario, "password": senha},
-            timeout=5.0
-        )
-        if response.status_code == 200:
-            st.session_state.token = response.json()["access_token"]
-            st.sidebar.success("Autenticado com sucesso via JWT!")
-        else:
-            st.sidebar.error("Falha na autenticação. Verifique as credenciais.")
-    except Exception as e:
-        st.sidebar.error(f"Erro ao conectar com a API Backend: {e}")
-
-# ==========================================
-# GERAÇÃO DE DADOS SINTÉTICOS PARA APRESENTAÇÃO
-# ==========================================
-@st.cache_data
-def carregar_dados_analiticos():
-    dados = {
-        "Data": pd.date_range(start="2026-05-01", periods=15, freq="D"),
-        "Lucro_ROI": [12.5, 14.2, -5.1, 8.9, 22.4, 18.1, 31.0, -2.4, 15.6, 28.9, 34.2, 11.0, 42.1, 38.5, 51.2],
-        "Lote_Eventos": [100, 120, 90, 110, 150, 130, 180, 95, 140, 160, 175, 115, 210, 190, 230],
-        "Mercado": ["Gols", "Handicap", "Cantos", "Gols", "Ambos Marcam", "Handicap", "Gols", "Cantos", "Ambos Marcam", "Gols", "Handicap", "Cantos", "Gols", "Ambos Marcam", "Handicap"]
-    }
-    return pd.DataFrame(dados)
-
-df = carregar_dados_analiticos()
-
-# ==========================================
-# ESTRUTURAÇÃO DOS GRÁFICOS PLOTLY (CORRIGIDO)
-# ==========================================
-col1, col2 = st.columns(2)
-
-with col1:
-    st.subheader("📈 Curva Evolutiva de ROI / Lucro Operacional")
-    fig_linha = px.line(
-        df, 
-        x="Data", 
-        y="Lucro_ROI", 
-        title="Retorno Percentual sobre Investimento por Período",
-        labels={"Lucro_ROI": "Lucro / ROI (%)", "Data": "Data do Evento"},
-        markers=True,
-        template="plotly_dark"
-    )
-    # CORREÇÃO SINTÁTICA DA LINHA 86: Parâmetro injetado via dicionário compatível com Plotly Express
-    fig_linha.update_traces(line=dict(color="#00ffcc", width=3))
-    st.plotly_chart(fig_linha, use_container_width=True)
-
-with col2:
-    st.subheader("📊 Distribuição Macroeconômica por Mercado")
-    fig_barra = px.bar(
-        df,
-        x="Mercado",
-        y="Lote_Eventos",
-        color="Mercado",
-        title="Volumetria de Lotes Processados por Segmento Esportivo",
-        labels={"Lote_Eventos": "Volume de Eventos", "Mercado": "Segmento"},
-        template="plotly_dark"
-    )
-    st.plotly_chart(fig_barra, use_container_width=True)
-
-# ==========================================
-# INTERAÇÃO ASSÍNCRONA COM O BACKEND
-# ==========================================
-st.markdown("---")
-st.subheader("⚙️ Gatilho de Processamento em Lote")
-st.write("Dispare tarefas analíticas pesadas diretamente para a Thread Pool do Backend.")
-
-if st.button("Disparar Carga de Trabalho Assíncrona"):
-    if st.session_state.token is None:
-        st.warning("🔒 Operação bloqueada. Você precisa se autenticar na barra lateral primeiro.")
+if st.sidebar.button("Conectar ao Engine"):
+    if usuario == "admin@ultra.com" and senha == "12345678":
+        st.session_state.conectado = True
+        st.sidebar.success("Conectado com sucesso!")
     else:
-        headers = {"Authorization": f"Bearer {st.session_state.token}"}
-        payload = {"solicitante": usuario, "lote_tamanho": 150, "operacao": "cruzamento_metricas"}
+        st.sidebar.error("Usuário ou senha incorretos.")
+
+if not st.session_state.conectado:
+    st.warning("Por favor, insira suas credenciais na barra lateral para liberar o controle do Engine.")
+else:
+    st.success("⚡ Conexão ativa com o núcleo de análise.")
+    
+    # Abas de navegação interna
+    aba_coleta, aba_graficos = st.tabs(["🚀 Disparar Coletas", "📈 Análise Operacional"])
+    
+    with aba_coleta:
+        st.subheader("Iniciar Nova Raspagem de Dados")
+        st.write("Escolha a liga e o ID do time da ESPN para alimentar o banco de dados.")
         
-        try:
-            res = requests.post(f"{BACKEND_URL}/analytics/processar", json=payload, headers=headers, timeout=5.0)
-            if res.status_code == 200:
-                st.success(f"Sucesso! Resposta do Engine: {res.json()}")
-            else:
-                st.error(f"Erro no processamento da API: {res.status_code}")
-        except Exception as e:
-            st.error(f"Erro físico de conexão com o servidor Backend: {e}")
+        col1, col2 = st.columns(2)
+        with col1:
+            liga_selecionada = st.selectbox(
+                "Selecione a Liga", 
+                ["/soccer/liga/eng.1", "/soccer/liga/esp.1", "/soccer/liga/bra.1"],
+                format_func=lambda x: "Premier League (Inglaterra)" if "eng.1" in x else "LaLiga (Espanha)" if "esp.1" in x else "Brasileirão (Brasil)"
+            )
+        with col2:
+            id_time = st.text_input("ID do Time na ESPN (Ex: 360 para Real Madrid, 359 para Barcelona)", value="360")
+            
+        if st.button("Executar Engenharia de Coleta"):
+            with st.spinner("Enviando requisição para a fila de execução rápida..."):
+                try:
+                    url_final = f"{BACKEND_URL}/coletar{liga_selecionada}/{id_time}"
+                    resposta = requests.post(url_final, timeout=10)
+                    
+                    if resposta.status_code == 200:
+                        st.balloons()
+                        st.success(f"Sucesso! O Worker começou a processar os dados do time {id_time}.")
+                    else:
+                        st.error(f"O servidor backend retornou um erro: {resposta.status_code}")
+                except Exception as e:
+                    st.error(f"Não foi possível conectar ao Backend: {e}")
+
+    with aba_graficos:
+        # Exibição simulada dos gráficos que aparecem na sua tela
+        col_g1, col_g2 = st.columns(2)
+        
+        with col_g1:
+            st.subheader("📈 Curva Evolutiva de ROI / Lucro Operacional")
+            dados_roi = pd.DataFrame({"Jogos": range(1, 11), "ROI": [2, 5, 4, 7, 6, 9, 8, 12, 11, 15]})
+            fig_roi = px.line(dados_roi, x="Jogos", y="ROI", markers=True)
+            st.plotly_chart(fig_roi, use_container_width=True)
+            
+        with col_g2:
+            st.subheader("📊 Distribuição Macroeconômica por Mercado")
+            dados_mercado = pd.DataFrame({
+                "Mercado": ["Gols", "Handicap", "Cantos", "Ambos Marcam"],
+                "Volume": [400, 300, 200, 150]
+            })
+            fig_mercado = px.bar(dados_mercado, x="Mercado", y="Volume", color="Mercado")
+            st.plotly_chart(fig_mercado, use_container_width=True)

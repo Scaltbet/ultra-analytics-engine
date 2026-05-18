@@ -1,6 +1,8 @@
 import requests
 import time
 import random
+# Alinhado: Importa a instância do Celery configurada com SSL na pasta workers
+from workers.celery_app import celery_app
 
 class ColetorESPN:
     def __init__(self):
@@ -38,3 +40,49 @@ class ColetorESPN:
         except Exception as e:
             print(f"Erro ao coletar jogo {game_id}: {e}")
             return None
+
+# ==============================================================================
+# ALINHAMENTO COM O MOTOR CELERY
+# ==============================================================================
+
+@celery_app.task(name="backend.coletor_espn.tarefa_coleta_espn")
+def tarefa_coleta_espn(liga: str, id_time: str):
+    """
+    Função gerenciadora executada em segundo plano pelo Worker.
+    Ela utiliza a classe ColetorESPN para minerar os dados com segurança.
+    """
+    # 1. Instancia o robô coletor
+    coletor = ColetorESPN()
+    
+    print(f"Instanciando motor de busca para a liga: {liga} | Time ID: {id_time}")
+    
+    # 2. Busca a lista de IDs dos jogos finalizados (Limite padrão de 20)
+    lista_de_ids = coletor.obter_ultimos_jogos_id(liga, id_time)
+    
+    if not lista_de_ids:
+        return {
+            "status": "Aviso", 
+            "mensagem": f"Nenhum jogo finalizado encontrado para o time {id_time}."
+        }
+        
+    resultados_finais = []
+    
+    # 3. Varre os IDs encontrados coletando o scout individual de cada partida
+    for game_id in lista_de_ids:
+        print(f"Minerando dados detalhados da partida ID: {game_id}")
+        scout_jogo = coletor.obter_scout_partida(liga, game_id)
+        
+        if scout_jogo:
+            resultados_finais.append({
+                "game_id": game_id,
+                "dados_brutos": scout_jogo
+            })
+            
+    # 4. Retorna o relatório final para salvar o estado no Redis com SSL
+    return {
+        "status": "Sucesso",
+        "liga": liga,
+        "id_time": id_time,
+        "total_jogos_processados": len(resultados_finais),
+        "payload_coletado": resultados_finais
+    }

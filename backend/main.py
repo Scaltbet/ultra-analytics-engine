@@ -21,10 +21,11 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 # Ajustado o nome para "ultra_analytics_engine" para bater com o Worker
 celery_client = Celery("ultra_analytics_engine", broker=REDIS_URL, backend=REDIS_URL)
 
-# Ajuste cirúrgico de SSL para evitar rejeições e timeouts com o Redis seguro
+# ALTERAÇÃO AQUI: Ajuste cirúrgico de SSL e parâmetros de transporte para evitar timeouts no Render
 celery_client.conf.update(
     broker_use_ssl={"ssl_cert_reqs": "none"},
-    redis_backend_use_ssl={"ssl_cert_reqs": "none"}
+    redis_backend_use_ssl={"ssl_cert_reqs": "none"},
+    result_backend_transport_options={"ssl_cert_reqs": "none"}  # <-- NOVA LINHA ESSENCIAL
 )
 
 class SolicitacaoColeta(BaseModel):

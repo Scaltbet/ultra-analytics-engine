@@ -61,10 +61,11 @@ else:
         if st.button("Executar Engenharia de Coleta"):
             with st.spinner("Enviando requisição para a fila de execução rápida..."):
                 try:
-                    # Envia a rota completa exatamente como o backend espera receber
-                    url_final = f"{BACKEND_URL}/coletar{liga_selecionada}/{id_time}"
+                    # Envia para a rota raiz de coleta usando dicionário de parâmetros isolados
+                    url_final = f"{BACKEND_URL}/coletar"
+                    parametros = {"liga": liga_selecionada, "id_time": id_time}
                     
-                    resposta = requests.post(url_final, timeout=15)
+                    resposta = requests.post(url_final, params=parametros, timeout=15)
                     
                     if resposta.status_code == 200:
                         st.balloons()
@@ -79,7 +80,7 @@ else:
         
         with col_g1:
             st.subheader("📈 Curva Evolutiva de ROI / Lucro Operacional")
-            dados_roi = pd.DataFrame({"Jogos": list(range(1, 11)), "ROI": [10, 15, 12, 18, 22, 20, 25, 28, 30, 35]})
+            dados_roi = pd.DataFrame({"Jogos": list(range(1, 11)), "ROI": [2, 5, -1, 4, 8, 12, 10, 15, 14, 21]})
             fig_roi = px.line(dados_roi, x="Jogos", y="ROI", markers=True)
             st.plotly_chart(fig_roi, use_container_width=True)
             
@@ -87,7 +88,7 @@ else:
             st.subheader("📊 Distribuição Macroeconômica por Mercado")
             dados_mercado = pd.DataFrame({
                 "Mercado": ["Gols", "Handicap", "Cantos", "Ambos Marcam"],
-                "Volume": [35, 20, 30, 15]
+                "Volume": [45, 30, 65, 20]
             })
             fig_mercado = px.bar(dados_mercado, x="Mercado", y="Volume", color="Mercado")
             st.plotly_chart(fig_mercado, use_container_width=True)

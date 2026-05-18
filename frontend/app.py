@@ -19,7 +19,7 @@ if "ultimo_task_id" not in st.session_state:
 st.title("📊 Painel de Performance Esportiva")
 st.caption("Sistema de Alta Performance para Cruzamento de Estatísticas Esportivas")
 
-st.success("⚡ Conexão ativa com o núcleo de análise.")
+st.success("⚡ Conexão activa com o núcleo de análise.")
 
 # 4. Criação das Abas Visuais
 aba_disparar, aba_analise = st.tabs(["🚀 Disparar Coletas", "📈 Análise Operacional"])
@@ -31,15 +31,17 @@ with aba_disparar:
     col1, col2 = st.columns(2)
     
     with col1:
-        liga_selecionada = st.selectbox(
-            "Selecione a Liga", 
-            [
-                "LaLiga (Espanha)", 
-                "Premier League (Inglaterra)", 
-                "Serie A (Itália)", 
-                "Champions League"
-            ]
-        )
+        # Dicionário que traduz o nome visual para a rota real que a API/Site da ESPN usa
+        ligas_disponiveis = {
+            "LaLiga (Espanha)": "/soccer/league/_/name/esp.1",
+            "Premier League (Inglaterra)": "/soccer/league/_/name/eng.1",
+            "Serie A (Itália)": "/soccer/league/_/name/ita.1",
+            "Champions League": "/soccer/league/_/name/uefa.champions"
+        }
+        
+        liga_visual = st.selectbox("Selecione a Liga", list(ligas_disponiveis.keys()))
+        # Obtém o caminho correto (/soccer/...) em vez do texto bruto
+        liga_selecionada = ligas_disponiveis[liga_visual]
         
     with col2:
         id_time = st.text_input(
@@ -47,11 +49,11 @@ with aba_disparar:
             value="360"
         )
 
-    # Botão de Ação Principal
+    # Botão de Acção Principal
     if st.button("Executar Engenharia de Coleta"):
         with st.spinner("Acionando motores e enviando ordem para os Workers..."):
             try:
-                # O payload precisa ir exatamente como o FastAPI espera
+                # Envia o caminho de URL mapeado que o backend espera
                 payload = {
                     "liga": str(liga_selecionada),
                     "id_time": str(id_time)
@@ -62,7 +64,6 @@ with aba_disparar:
                     f"{URL_BACKEND}/disparar-coleta", 
                     json=payload, 
                     timeout=60
-            
                 )
                 
                 if resposta.status_code == 200:
@@ -97,19 +98,14 @@ with aba_disparar:
                     if resposta_status.status_code == 200:
                         dados_status = resposta_status.json()
                         status_atual = dados_status.get("status")
-                        
                         if status_atual == "PENDING":
                             st.warning("⏳ Aguardando na fila / Processando...")
                         elif status_atual == "SUCCESS":
                             st.success("✅ Concluído com sucesso pelo Worker!")
                             st.json(dados_status.get("resultado"))
                         else:
-                            st.info(f"Status atual: {status_atual}")
+                            st.error(f"❌ Status retornado: {status_atual}")
                     else:
-                        st.error(f"Não foi possível encontrar dados para este ID. Status: {resposta_status.status_code}")
+                        st.error(f"Erro {resposta_status.status_code} ao buscar status.")
                 except Exception as e:
-                    st.error(f"Erro ao conectar no monitor: {e}")
-
-with aba_analise:
-    st.header("Análise Operacional")
-    st.info("Esta aba exibirá os gráficos probabilísticos de gols e escanteios assim que o banco de dados receber os primeiros registros da ESPN.")
+                    st.error(f"Erro de comunicação: {e}")

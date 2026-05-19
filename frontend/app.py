@@ -4,23 +4,20 @@ import requests
 st.set_page_config(page_title="Ultra Analytics Engine", layout="wide")
 st.title("📊 Ultra Analytics Engine")
 
-# URL oficial do seu backend hospedado no Render
 BACKEND_URL = "https://ultra-analytics-engine.onrender.com"
 
-# Teste automático de conexão de segurança
+# Teste de conexão básico
 try:
-    checar_conexao = requests.get(BACKEND_URL, timeout=5)
-    if checar_conexao.status_code == 200:
+    checar = requests.get(BACKEND_URL, timeout=5)
+    if checar.status_code == 200:
         st.success("⚡ Conexão activa com o núcleo de análise.")
     else:
-        st.error("❌ Conexão instável com o servidor principal.")
+        st.error("❌ Conexão instável com o servidor.")
 except Exception:
     st.error("❌ Núcleo de análise offline no Render.")
 
 st.subheader("Iniciar Nova Raspagem de Dados")
-st.write("Escolha a liga e o ID do time da ESPN para alimentar o banco de dados.")
 
-# DICIONÁRIO CRÍTICO: Mapeia o texto da tela para o código que a API da ESPN exige
 OPCOES_LIGAS = {
     "LaLiga (Espanha)": "soccer/esp.1",
     "Brasileirão Série A": "soccer/bra.1",
@@ -29,31 +26,35 @@ OPCOES_LIGAS = {
     "Champions League": "soccer/uefa.champions"
 }
 
-# Cria o campo de seleção usando as chaves amigáveis
-liga_selecionada = st.selectbox("Selecione a Liga", list(OPCOES_LIGAS.keys()))
-id_time = st.text_input("ID do Time na ESPN (Ex: 360 para Real Madrid)", value="360")
+# Criando duas colunas idênticas ao seu novo layout da imagem
+col1, col2 = st.columns([2, 1])
+
+with col1:
+    liga_selecionada = st.selectbox("Selecione a Liga", list(OPCOES_LIGAS.keys()))
+
+with col2:
+    id_time = st.text_input("ID do Time na ESPN", value="360")
 
 if st.button("Executar Engenharia de Coleta"):
-    # Traduz o nome bonito para o slug técnico (ex: "soccer/esp.1")
     liga_slug = OPCOES_LIGAS[liga_selecionada]
     
+    # Payload explícito e limpo combinando com o FastAPI
     payload = {
-        "liga": liga_slug,
-        "id_time": str(id_time)
+        "liga": str(liga_slug),
+        "id_time": str(id_time).strip()
     }
     
-    with st.spinner("Motor ESPN ativado... Coletando histórico de confrontos..."):
+    with st.spinner("Motor ESPN ativado..."):
         try:
-            # Dispara a requisição POST para a rota /analisar do seu FastAPI
             response = requests.post(f"{BACKEND_URL}/analisar", json=payload, timeout=20)
             
             if response.status_code == 200:
                 resultado = response.json()
                 st.success(f"🔥 Sucesso! Localizados {resultado['quantidade_jogos_localizados']} jogos recentes para o banco de dados.")
-                st.json(resultado["lista_ids"]) # Exibe os IDs coletados temporariamente
+                st.json(resultado["lista_ids"])
             elif response.status_code == 404:
-                st.error("Erro 404: ID do time ou Liga não encontrados na base de dados da ESPN. Verifique o código do clube.")
+                st.error("Erro 404: Nenhum jogo recente ou time localizado com os parâmetros informados.")
             else:
-                st.error(f"Erro {response.status_code}: Falha na resposta do motor de análise.")
+                st.error(f"Erro {response.status_code}: O servidor recusou o formato da requisição.")
         except Exception as e:
-            st.error(f"Erro crítico de rede: Não foi possível alcançar o servidor. ({e})")
+            st.error(f"Erro crítico de rede: {e}")

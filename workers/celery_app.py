@@ -6,7 +6,7 @@ from celery import Celery
 REDIS_URL = os.getenv("REDIS_URL")
 
 # Inicializa o Celery apontando para o Redis APENAS como Broker (Fila)
-# O parâmetro 'backend=None' remove a necessidade de checagem SSL complexa que quebrava o app
+# O parâmetro backend=None remove totalmente o circuito de conexões problemáticas
 celery_app = Celery(
     "ultra_analytics_engine",
     broker=REDIS_URL,
@@ -14,14 +14,14 @@ celery_app = Celery(
     include=["backend.coletor_espn"]  # Garante que o Celery encontre suas tarefas da ESPN
 )
 
-# Configurações estritas de segurança para o Broker funcionar na nuvem
+# Configurações de segurança para o canal de mensagens funcionar na nuvem
 celery_app.conf.update(
-    # Ativa o SSL para o envio de mensagens (Fila) desativando validação de hostname
+    # Ativa o SSL para o envio de mensagens (Fila) desativando validação estrita
     broker_use_ssl={
         "ssl_cert_reqs": ssl.CERT_NONE
     },
     
-    # Ignora os resultados das tarefas (evita que o Celery tente criar tabelas de status no Redis)
+    # Ignora os resultados das tarefas para evitar que o Celery tente gravar dados no Redis
     task_ignore_result=True,
     task_store_errors_even_if_ignored=False,
     

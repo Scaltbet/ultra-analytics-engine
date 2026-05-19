@@ -1,35 +1,33 @@
-import os
-import ssl
+python
+import time
+import requests
 from celery import Celery
 
-# Puxa a URL com 'rediss://' configurada no Render através do grupo Config
-REDIS_URL = os.getenv("REDIS_URL")
+# Configuração do Celery usando o Redis gratuito do Upstash
+app = Celery('tasks', broker='redis://localhost:6337/0') # Altere para sua URL do Upstash em Produção
 
-# Inicializa o Celery apontando para o Redis APENAS como Broker (Fila)
-celery_app = Celery(
-    "ultra_analytics_engine",
-    broker=REDIS_URL,
-    include=["backend.coletor_espn"]  # Garante que o Celery encontre suas tarefas da ESPN
-)
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+}
 
-# Configurações de segurança para o canal de mensagens funcionar na nuvem
-celery_app.conf.update(
-    # BLOQUEIO CRÍTICO: Força o Celery a NUNCA usar um backend de resultados,
-    # matando o comportamento oculto que gerava o erro de reconexão.
-    result_backend=None,
-    task_ignore_result=True,
-    task_store_errors_even_if_ignored=False,
+@app.task(name="tasks.coletar_dados_espn")
+def coletar_dados_espn(esporte: str, liga: str, id_time: str):
+    """
+    Worker que executa buscas inteligentes respeitando regras de anti-bloqueio.
+    Esporte: 'soccer' ou 'basketball'
+    Liga: 'eng.1', 'esp.1', 'nba'
+    """
+    # URL Base Oculta mapeada via Inspecionar Elemento (F12)
+    url_base = f"https://site.api.espn.com/apis/site/v2/sports/{esporte}/{liga}/scoreboard"
     
-    # Ativa o SSL para o envio de mensagens (Fila) desativando validação estrita
-    broker_use_ssl={
-        "ssl_cert_reqs": ssl.CERT_NONE
-    },
-    
-    # Configurações padrão de fuso horário
-    timezone="America/Sao_Paulo",
-    enable_utc=True
-)
-
-@celery_app.task
-def check_worker_status():
-    return "Worker de fila operando perfeitamente no Render!"
+    try:
+        # Executa requisição na API interna da ESPN
+        resposta = requests.get(url_base, headers=HEADERS, timeout=10)
+        dados = resposta.json()
+        
+        # 🛑 REGLA DE COOL-DOWN (Evita disparar requisições em rajada)
+        # Durante partidas ao vivo ou loops intensos, força uma folga automática de segurança
+        time.sleep(3) 
+        
+        # Aqui os dados filtrados seriam processados e inseridos no Supabase
+        return f"Coleta realizada com sucesso para o time {id_time}. {len(dados.get('events', []))} partidas mapeadas."

@@ -166,3 +166,8 @@ if st.session_state.confronto_ativo:
                 st.error("Dados históricos insuficientes na ESPN para gerar o cruzamento de dados desta partida.")
         except Exception as e:
             st.error(f"Erro ao conectar com a rota de análise: {e}")
+
+
+
+
+            forcando atualizacao 

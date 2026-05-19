@@ -25,6 +25,7 @@ def home():
 
 @app.post("/grade")
 def obter_grade_jogos(dados: RequisicaoGrade):
+    print(f"[API] Solicitando grade para a liga: {dados.liga}")
     jogos = coletor.obter_jogos_do_dia(dados.liga, dados.data)
     if not jogos:
         raise HTTPException(status_code=404, detail="Nenhuma partida localizada.")
@@ -34,14 +35,12 @@ def obter_grade_jogos(dados: RequisicaoGrade):
 def analisar_confronto(dados: RequisicaoCruzamento):
     print(f"[API] Cruzando dados avançados: Mandante {dados.id_mandante} vs Visitante {dados.id_visitante}")
     
-    # Coleta histórica em paralelo/sequência para as duas equipes
     stats_mandante = coletor.obter_estatisticas_equipe(dados.liga, dados.id_mandante)
     stats_visitante = coletor.obter_estatisticas_equipe(dados.liga, dados.id_visitante)
     
     if not stats_mandante or not stats_visitante:
         raise HTTPException(status_code=404, detail="Dados históricos insuficientes na ESPN para uma das equipes.")
         
-    # Algoritmo de Tendência Predictor Scalt Pro
     expectativa_gols = round(stats_mandante["media_gols_marcados"] + stats_visitante["media_gols_sofridos"], 2)
     prob_ambas_marcam = round((stats_mandante["porcentagem_ambas_marcam"] + stats_visitante["porcentagem_ambas_marcam"]) / 2, 1)
     

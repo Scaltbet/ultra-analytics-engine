@@ -5,7 +5,7 @@ from datetime import datetime
 # Configuração de Layout Profissional de Inteligência Esportiva
 st.set_page_config(page_title="Scalt Bet Pro", layout="wide", initial_sidebar_state="collapsed")
 
-# CSS para estilização e remoção de margens excessivas
+# CSS para estilização e remoção de margens excessivas - Correção de Sintaxe Aplicada
 st.markdown("""
     <style>
     .metric-box {
@@ -21,7 +21,7 @@ st.markdown("""
         color: #38bdf8;
     }
     </style>
-""", unsafe_unsafe_with_garbage=True)
+""", unsafe_allow_html=True)
 
 # Cabeçalho de Identidade Visual
 st.title("🚀 Scalt Bet Pro")
@@ -151,7 +151,6 @@ if st.session_state.confronto_ativo:
                 # Tabela de Comparação Direta das Últimas 20 Partidas
                 st.markdown("### 📈 Raio-X dos Últimos 20 Jogos")
                 
-                # Montagem da tabela estruturada para o operador
                 st.write(f"""
                 | Métrica Estatística | {conf['mandante_nome']} (Mandante) | {conf['visitante_nome']} (Visitante) |
                 | :--- | :---: | :---: |
